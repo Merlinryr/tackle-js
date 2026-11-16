@@ -20,7 +20,8 @@ export const anchorOf = (el: Element): Anchor => ({
   id: el.id,
   testid: el.getAttribute('data-testid') ?? undefined,
   source: el.closest('[data-source]')?.getAttribute('data-source') ?? undefined,
-  text: norm(el.textContent),
+  // Keep text out of comments for opted-out regions and for fields where users type or secrets live.
+  text: el.closest('[data-tackle-ignore], input, textarea, select, [contenteditable], [type=password]') ? undefined : norm(el.textContent),
 })
 
 const q = (s: string) => {

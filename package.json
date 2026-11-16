@@ -1,6 +1,6 @@
 {
   "name": "@magomerlino/tackle",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "Figma-style comment bubbles pinned to any element of your dev app. Comments are saved as JSON in your repo for an AI agent to fix in priority order.",
   "type": "module",
   "license": "MIT",

@@ -10,6 +10,7 @@ export type Author = 'developer' | 'agent'
 
 export interface Message {
   author: Author
+  by?: string // git identity of the developer who wrote it, "Name <email>"
   text: string
   createdAt: string
 }

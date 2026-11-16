@@ -135,7 +135,7 @@ function init() {
         const pin = document.createElement('div')
         pin.className = `pin ${c.status}${c.id === openId ? ' sel' : ''}`
         pin.dataset.id = c.id
-        pin.innerHTML = `<button class="dot" aria-label="Comment #${c.id}, ${label(c.status)}, ${c.priority} ${c.type}${asks ? ', agent replied' : ''}: ${esc(first.text)}">${face}${asks ? '<span class="ask"></span>' : ''}</button><span class="body">
+        pin.innerHTML = `<button class="dot" aria-label="Comment #${c.id}, ${label(c.status)}, ${esc(c.priority)} ${esc(c.type)}${asks ? ', agent replied' : ''}: ${esc(first.text)}">${face}${asks ? '<span class="ask"></span>' : ''}</button><span class="body">
 <span class="who"><b>${NAME[first.author]}</b><time>${ago(first.createdAt)}</time></span>
 <span class="txt">${esc(first.text)}</span>
 <span class="tags"><span class="priority-${c.priority}">${icon(c.priority)}${label(c.priority)}</span><span>${icon(c.type)}${label(c.type)}</span>${replies ? `<span>${icon('chat')}${replies}</span>` : ''}<button class="copy mono" data-copy="${c.id}" title="Copy ID (${COPY_KEY})">#${c.id}${icon('clip')}</button></span></span>`
@@ -312,7 +312,7 @@ ${composer('Reply')}`
         type: draft.type,
         anchor: { ...anchorOf(draft.el), offset: draft.offset },
         context: {
-          url: location.href,
+          url: location.origin + location.pathname, // no query or hash: they often carry tokens
           path: route(),
           viewport: { w: innerWidth, h: innerHeight },
           colorScheme: matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light',

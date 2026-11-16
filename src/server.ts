@@ -5,6 +5,7 @@ import { mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { PRIORITIES, STATUSES, TYPES } from './comments.ts'
+import { gitIdentity } from './identity.ts'
 
 export interface TackleOptions {
   dir?: string
@@ -52,6 +53,7 @@ export async function listComments(dir: string): Promise<Comment[]> {
 
 export function tackle(options: TackleOptions = {}) {
   const dir = resolve(options.dir ?? DEFAULT_DIR)
+  const who = gitIdentity(process.cwd())
 
   const off = process.env.NODE_ENV === 'production'
 
@@ -85,7 +87,7 @@ export function tackle(options: TackleOptions = {}) {
             createdAt,
             ...rest,
             status: 'open',
-            thread: [{ author: 'developer', text, createdAt }],
+            thread: [{ author: 'developer', by: await who, text, createdAt }],
           }
           try {
             await save(comment, 'wx')
@@ -101,7 +103,7 @@ export function tackle(options: TackleOptions = {}) {
       if (id && messages && req.method === 'POST') {
         const text = message(await readJson(req))
         const comment = await readExisting(fileOf(dir, id))
-        comment.thread.push({ author: 'developer', text, createdAt: new Date().toISOString() })
+        comment.thread.push({ author: 'developer', by: await who, text, createdAt: new Date().toISOString() })
         await save(comment)
         return send(res, 201, comment)
       }
@@ -144,8 +146,16 @@ function fail(status: number, message: string): never {
   throw Object.assign(new Error(message), { status })
 }
 
+// Files on disk can be hand-edited or come from a teammate's commit: check the shape before anything trusts it.
 async function readComment(path: string): Promise<Comment> {
-  return normalize(JSON.parse(await readFile(path, 'utf8')))
+  const c = normalize(JSON.parse(await readFile(path, 'utf8')))
+  const ok = typeof c?.id === 'string'
+    && PRIORITIES.includes(c.priority) && TYPES.includes(c.type) && STATUSES.includes(c.status)
+    && Array.isArray(c.thread) && c.thread.length > 0
+    && c.thread.every((m: any) => (m?.author === 'developer' || m?.author === 'agent') && typeof m.text === 'string' && m.text.length <= 5000 && (m.by === undefined || typeof m.by === 'string'))
+  if (!ok)
+    throw new Error(`invalid comment in ${path}`)
+  return c
 }
 
 async function readExisting(path: string): Promise<Comment> {

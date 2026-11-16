@@ -40,7 +40,9 @@ The overlay is dev-only. It never runs in a production build.
 - **Enter** sends, **Shift+Enter** adds a line, **Esc** closes.
 - Every comment has an id such as `a1b2c3d`. Tell your agent "fix tack a1b2c3d".
 
-Comments are saved as `.tackle/<id>.json`. Commit the folder.
+Comments are saved as `.tackle/<id>.json`. Commit the folder, but review comments in PRs first: they are text that an AI agent will read.
+
+To keep an element's text out of comments, add `data-tackle-ignore` to it. Inputs, textareas, selects, contenteditable and password fields are never captured.
 
 ## Agent loop
 
