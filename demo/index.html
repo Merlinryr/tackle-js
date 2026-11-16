@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tackle demo</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 0; color: #1a1a1a; background: #fafaf7; }
+    header { display: flex; justify-content: space-between; align-items: center; padding: 16px 32px; border-bottom: 1px solid #e5e5e0; }
+    nav a { margin-left: 20px; color: inherit; }
+    main { max-width: 880px; margin: 0 auto; padding: 48px 16px; }
+    h1 { font-size: 2.6rem; margin: 0 0 12px; }
+    .cta { padding: 10px 18px; border: 0; border-radius: 8px; background: #2563eb; color: #fff; font-size: 1rem; cursor: pointer; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-top: 40px; }
+    .card { padding: 20px; background: #fff; border: 1px solid #e5e5e0; border-radius: 12px; }
+    dialog { position: fixed; top: 30%; border: 0; border-radius: 12px; padding: 24px; box-shadow: 0 10px 40px #0003; }
+  </style>
+</head>
+<body>
+  <header data-source="demo/index.html:20">
+    <strong>Acme</strong>
+    <nav><a href="#">Product</a><a href="#">Pricing</a><a href="#">Docs</a></nav>
+  </header>
+  <main data-source="demo/index.html:24">
+    <h1>Ship faster with Acme</h1>
+    <p>The all-in-one platfrom for teams who move quick.</p>
+    <button class="cta" data-testid="hero-cta" onclick="document.querySelector('dialog').show()">Get started</button>
+    <button id="shuffle" onclick="const c = document.querySelector('.cards'); c.prepend(c.lastElementChild)">Shuffle cards (simulate DOM drift)</button>
+    <section class="cards">
+      <article class="card"><h3>Starter</h3><p>For side projects.</p></article>
+      <article class="card"><h3>Team</h3><p>For growing teams.</p></article>
+      <article class="card"><h3>Enterprise</h3><p>Talk to sales.</p></article>
+    </section>
+  </main>
+  <dialog>
+    <h2>Create your account</h2>
+    <p>Open states stay open while you comment on them.</p>
+    <button onclick="this.closest('dialog').close()">Close</button>
+  </dialog>
+</body>
+</html>

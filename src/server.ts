@@ -1,0 +1,254 @@
+import type { IncomingMessage, ServerResponse } from 'node:http'
+import type { Comment } from './comments.ts'
+import { randomBytes } from 'node:crypto'
+import { mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { join, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { PRIORITIES, STATUSES, TYPES } from './comments.ts'
+
+export interface TackleOptions {
+  /** Where comment files live. Relative paths resolve against the process cwd. Default `.tackle`. */
+  dir?: string
+}
+
+export const DEFAULT_DIR = '.tackle'
+export const fileOf = (dir: string, id: string) => join(dir, `${id}.json`)
+
+const BASE = '/__tackle'
+const MAX_BODY = 64 * 1024
+const ID = /^[a-z0-9]{6,32}$/
+
+/** Upgrades pre-thread comments (`text` + optional agent `note`) so old files keep working. */
+function normalize(c: any): Comment {
+  if (!Array.isArray(c.thread)) {
+    c.thread = [{ author: 'developer', text: String(c.text ?? ''), createdAt: c.createdAt }]
+    if (c.note)
+      c.thread.push({ author: 'agent', text: String(c.note), createdAt: c.createdAt })
+    delete c.text
+    delete c.note
+  }
+  return c
+}
+
+/** Reads every `<id>.json` in `dir`. Malformed files are skipped with a warning, never deleted. */
+export async function listComments(dir: string): Promise<Comment[]> {
+  let files: string[]
+  try {
+    files = (await readdir(dir)).filter(f => f.endsWith('.json'))
+  }
+  catch (e: any) {
+    if (e.code === 'ENOENT')
+      return []
+    throw e
+  }
+  const out: Comment[] = []
+  for (const f of files) {
+    try {
+      out.push(await readComment(join(dir, f)))
+    }
+    catch {
+      console.warn(`[tackle] skipping unreadable ${f}`)
+    }
+  }
+  return out
+}
+
+/**
+ * Connect-style middleware (`(req, res, next)`): works with Vite, Express, Connect,
+ * or plain `node:http` (omit `next` and unmatched routes get a 404). Mount it in dev only.
+ */
+export function tackle(options: TackleOptions = {}) {
+  const dir = resolve(options.dir ?? DEFAULT_DIR)
+  const file = (id: string) => fileOf(dir, id)
+
+  // Dev-only by default: in production the endpoint doesn't exist even if someone forgets to unmount it.
+  const off = process.env.NODE_ENV === 'production'
+
+  return async (req: IncomingMessage, res: ServerResponse, next?: () => void) => {
+    const path = new URL(req.url ?? '/', 'http://x').pathname
+    if (off || (path !== BASE && !path.startsWith(`${BASE}/`)))
+      return next ? next() : send(res, 404, { error: 'not found' })
+    try {
+      if (path === `${BASE}/client.js` && req.method === 'GET') {
+        res.writeHead(200, { 'content-type': 'text/javascript', 'cache-control': 'no-cache' })
+        return res.end(await readFile(fileURLToPath(new URL('./client.js', import.meta.url))))
+      }
+      const m = path.match(/^\/__tackle\/comments(?:\/([^/]*)(\/messages)?)?$/)
+      if (!m)
+        return send(res, 404, { error: 'not found' })
+      const [, id, messages] = m
+      if (id !== undefined && !ID.test(id))
+        fail(400, 'invalid id')
+      const save = (c: Comment, flag = 'w') => writeFile(file(c.id), `${JSON.stringify(c, null, 2)}\n`, { flag })
+
+      if (!id && req.method === 'GET')
+        return send(res, 200, await listComments(dir))
+
+      if (!id && req.method === 'POST') {
+        const { text, ...rest } = parseNew(await readJson(req))
+        const createdAt = new Date().toISOString()
+        await mkdir(dir, { recursive: true })
+        // Commit-style short id (`a1b2c3d`): easy to say to an agent ("fix tack a1b2c3d"). Retry on the rare clash.
+        for (let attempt = 0; ; attempt++) {
+          const comment: Comment = {
+            id: randomBytes(4).toString('hex').slice(0, 7),
+            createdAt,
+            ...rest,
+            status: 'open',
+            thread: [{ author: 'developer', text, createdAt }],
+          }
+          try {
+            await save(comment, 'wx')
+            return send(res, 201, comment)
+          }
+          catch (e: any) {
+            if (e.code !== 'EEXIST' || attempt >= 4)
+              throw e
+          }
+        }
+      }
+
+      // Replies over HTTP always come from the browser, so they're always the developer's.
+      // The agent replies by writing to the file (or, later, through an MCP server).
+      if (id && messages && req.method === 'POST') {
+        const text = message(await readJson(req))
+        const comment = await readExisting(file(id))
+        comment.thread.push({ author: 'developer', text, createdAt: new Date().toISOString() })
+        await save(comment)
+        return send(res, 201, comment)
+      }
+
+      if (id && !messages && req.method === 'PATCH') {
+        const body = await readJson(req)
+        const comment = await readExisting(file(id))
+        if (body?.status !== undefined)
+          comment.status = oneOf(body.status, STATUSES, 'status')
+        if (body?.priority !== undefined)
+          comment.priority = oneOf(body.priority, PRIORITIES, 'priority')
+        if (body?.type !== undefined)
+          comment.type = oneOf(body.type, TYPES, 'type')
+        await save(comment)
+        return send(res, 200, comment)
+      }
+
+      if (id && !messages && req.method === 'DELETE') {
+        await readExisting(file(id))
+        await rm(file(id))
+        return send(res, 204)
+      }
+
+      fail(405, 'method not allowed')
+    }
+    catch (e: any) {
+      send(res, e.status ?? 500, { error: e.status ? e.message : 'internal error' })
+      if (!e.status)
+        console.error('[tackle]', e)
+    }
+  }
+}
+
+function send(res: ServerResponse, status: number, body?: unknown) {
+  res.writeHead(status, body === undefined ? {} : { 'content-type': 'application/json' })
+  res.end(body === undefined ? undefined : JSON.stringify(body))
+}
+
+function fail(status: number, message: string): never {
+  throw Object.assign(new Error(message), { status })
+}
+
+async function readComment(path: string): Promise<Comment> {
+  return normalize(JSON.parse(await readFile(path, 'utf8')))
+}
+
+async function readExisting(path: string): Promise<Comment> {
+  try {
+    return await readComment(path)
+  }
+  catch {
+    fail(404, 'comment not found')
+  }
+}
+
+// Requiring a JSON content type forces a CORS preflight, which we never answer:
+// other sites the developer visits can't write instructions for the agent into the repo.
+async function readJson(req: IncomingMessage): Promise<any> {
+  if (!req.headers['content-type']?.startsWith('application/json'))
+    fail(415, 'content-type must be application/json')
+  // Body already parsed by e.g. express.json(): the stream is drained, use its result.
+  const parsed = (req as { body?: unknown }).body
+  if (parsed !== null && typeof parsed === 'object')
+    return parsed
+  const chunks: Buffer[] = []
+  let size = 0
+  for await (const chunk of req) {
+    size += chunk.length
+    if (size > MAX_BODY)
+      fail(413, 'body too large')
+    chunks.push(chunk)
+  }
+  try {
+    return JSON.parse(Buffer.concat(chunks).toString('utf8'))
+  }
+  catch {
+    fail(400, 'invalid JSON')
+  }
+}
+
+function str(v: unknown, max: number, name: string): string {
+  if (typeof v !== 'string' || v.length > max)
+    fail(400, `invalid ${name}`)
+  return v
+}
+const optStr = (v: unknown, max: number, name: string) => v == null || v === '' ? undefined : str(v, max, name)
+
+function oneOf<T extends readonly string[]>(v: unknown, list: T, name: string): T[number] {
+  if (!list.includes(v as string))
+    fail(400, `invalid ${name}`)
+  return v as T[number]
+}
+
+function num(v: unknown, name: string): number {
+  if (typeof v !== 'number' || !Number.isFinite(v))
+    fail(400, `invalid ${name}`)
+  return v
+}
+
+function message(b: any): string {
+  const text = str(b?.text, 5000, 'text').trim()
+  if (!text)
+    fail(400, 'text is required')
+  return text
+}
+
+const unit = (v: unknown, name: string) => Math.min(1, Math.max(0, num(v, name)))
+
+function parseAnchor(a: any): Comment['anchor'] {
+  a ??= {}
+  return {
+    tag: str(a.tag, 64, 'anchor.tag'),
+    selector: str(a.selector, 2000, 'anchor.selector'),
+    id: optStr(a.id, 200, 'anchor.id'),
+    testid: optStr(a.testid, 200, 'anchor.testid'),
+    source: optStr(a.source, 500, 'anchor.source'),
+    text: optStr(a.text, 200, 'anchor.text'),
+    offset: a.offset == null ? undefined : { x: unit(a.offset.x, 'offset.x'), y: unit(a.offset.y, 'offset.y') },
+  }
+}
+
+/** Builds the stored object field by field: unknown fields from the client never reach disk. */
+function parseNew(b: any): Pick<Comment, 'priority' | 'type' | 'anchor' | 'context'> & { text: string } {
+  const a = b?.anchor
+  const c = b?.context ?? {}
+  return {
+    text: message(b),
+    priority: oneOf(b.priority, PRIORITIES, 'priority'),
+    type: oneOf(b.type, TYPES, 'type'),
+    anchor: parseAnchor(a),
+    context: {
+      url: str(c.url, 2000, 'context.url'),
+      path: str(c.path, 2000, 'context.path'),
+      viewport: { w: num(c.viewport?.w, 'viewport.w'), h: num(c.viewport?.h, 'viewport.h') },
+      colorScheme: oneOf(c.colorScheme, ['light', 'dark'] as const, 'colorScheme'),
+    },
+  }
+}

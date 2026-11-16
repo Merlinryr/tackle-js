@@ -1,0 +1,61 @@
+{
+  "name": "@merlinryr/tackle",
+  "version": "0.0.1",
+  "description": "Pin comment bubbles on any element of a web app, stored in your repo for an AI agent to fix in priority order.",
+  "type": "module",
+  "license": "MIT",
+  "exports": {
+    "./server": {
+      "types": "./dist/server.d.ts",
+      "import": "./dist/server.js"
+    },
+    "./vite": {
+      "types": "./dist/vite.d.ts",
+      "import": "./dist/vite.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "keywords": [
+    "vite",
+    "comments",
+    "feedback",
+    "ai-agent",
+    "developer-tools"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "bin": {
+    "tackle": "./dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "skill"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "test": "node --test \"test/*.test.ts\"",
+    "typecheck": "tsc",
+    "demo": "pnpm build && vite demo",
+    "prepublishOnly": "pnpm typecheck && pnpm test && pnpm build"
+  },
+  "peerDependencies": {
+    "vite": ">=5"
+  },
+  "peerDependenciesMeta": {
+    "vite": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@phosphor-icons/core": "^2.1.1",
+    "@types/node": "^26.6.6",
+    "tsdown": "^0.23.7",
+    "typescript": "^7.0.2",
+    "vite": ">=5"
+  }
+}
