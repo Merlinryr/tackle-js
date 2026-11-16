@@ -1,4 +1,4 @@
-# @merlinryr/tackle
+# @magomerlino/tackle
 
 Pin Figma-like comment bubbles on any element of your web app. Comments are saved as JSON files in your repo, and an AI agent works through them in priority order.
 
@@ -14,14 +14,14 @@ Pin Figma-like comment bubbles on any element of your web app. Comments are save
 
 ```ts
 // vite.config.ts
-import tackle from '@merlinryr/tackle/vite'
+import tackle from '@magomerlino/tackle/vite'
 export default { plugins: [tackle()] }
 ```
 
 **Anything else.** Mount the middleware in dev and add the script tag yourself:
 
 ```js
-import { tackle } from '@merlinryr/tackle/server'
+import { tackle } from '@magomerlino/tackle/server'
 app.use(tackle({ dir: '.tackle' }))          // Express / Connect
 // http.createServer((req, res) => tackle()(req, res))
 ```

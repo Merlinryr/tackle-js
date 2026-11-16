@@ -15,7 +15,7 @@ npx --no-install tackle .tackle
 
 If the user names a tack id (e.g. "fix tack a1b2c3d"), open `.tackle/a1b2c3d.json` directly and handle only that one.
 
-Otherwise, the command above prints the **open** comments already in work order: priority (`urgent` → `high` → `low`), then type (`bug` → `replace-component` → `layout` → `style` → `copy`), then oldest first. Each line gives the file, the page path and the anchors. If that command fails (@merlinryr/tackle not installed), read the JSON files yourself and apply the same filter and order.
+Otherwise, the command above prints the **open** comments already in work order: priority (`urgent` → `high` → `low`), then type (`bug` → `replace-component` → `layout` → `style` → `copy`), then oldest first. Each line gives the file, the page path and the anchors. If that command fails (@magomerlino/tackle not installed), read the JSON files yourself and apply the same filter and order.
 
 ## 2. For each comment, in order
 

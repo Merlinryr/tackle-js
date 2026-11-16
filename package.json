@@ -1,5 +1,5 @@
 {
-  "name": "@merlinryr/tackle",
+  "name": "@magomerlino/tackle",
   "version": "0.0.1",
   "description": "Pin comment bubbles on any element of a web app, stored in your repo for an AI agent to fix in priority order.",
   "type": "module",
