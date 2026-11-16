@@ -32,8 +32,6 @@ const q = (s: string) => {
   }
 }
 
-// Stable ids first, then path + text agreeing, then text alone (DOM moved),
-// then path alone (text changed, e.g. a copy fix the agent already made) unless a stable id vanished.
 export function resolve(a: Anchor): Element | null {
   const stable = (a.testid && q(`[data-testid="${CSS.escape(a.testid)}"]`)) || (a.id && document.getElementById(a.id))
   if (stable)
@@ -42,12 +40,10 @@ export function resolve(a: Anchor): Element | null {
   if (byPath && (!a.text || norm(byPath.textContent) === a.text))
     return byPath
   if (a.text) {
-    // shortcut: scans every element of that tag, fine for dozens of comments; index by text if it gets slow.
     for (const e of document.querySelectorAll(a.tag)) {
       if (norm(e.textContent) === a.text)
         return e
     }
   }
-  // A vanished testid/id means the element is likely gone: orphan it rather than pin a look-alike sibling.
   return a.testid || a.id ? null : byPath
 }

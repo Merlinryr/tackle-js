@@ -1,4 +1,3 @@
-// Accent is one purple, used for selection, focus, progress and the agent. Priority/status colors are semantic.
 export const STYLE = `
 :host{all:initial;--bg:#2c2c2c;--raise:#383838;--fg:#f5f5f5;--muted:#a3a3a3;--line:#ffffff1a;--hover:#ffffff14;--accent:#a970ff;--off:#5c5c5c;--shadow:#0000008c;--ease:cubic-bezier(.16,1,.3,1)}
 @media (prefers-color-scheme:light){:host{--bg:#fff;--raise:#f5f5f5;--fg:#1e1e1e;--muted:#6e6e6e;--line:#0000001a;--hover:#0000000d;--accent:#8a3ffc;--off:#b3b3b3;--shadow:#1e1e1e33}}

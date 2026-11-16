@@ -2,7 +2,6 @@ import type { Plugin } from 'vite'
 import type { TackleOptions } from './server.ts'
 import { tackle } from './server.ts'
 
-/** Dev server only (`apply: 'serve'`): the overlay never reaches a production build. */
 export default function tacklePlugin(options: TackleOptions = {}): Plugin {
   return {
     name: 'tackle',

@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-// `tackle [dir]`: prints open comments in the order the agent should handle them.
 import { resolve } from 'node:path'
 import { sortForAgent } from './comments.ts'
 import { DEFAULT_DIR, fileOf, listComments } from './server.ts'

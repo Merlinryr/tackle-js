@@ -1,4 +1,3 @@
-// Browser overlay. Served by the middleware at /__tackle/client.js and runs on load.
 import type { Author, Comment } from './comments.ts'
 import { PRIORITIES, STATUSES, TYPES } from './comments.ts'
 import { anchorOf, resolve } from './anchor.ts'
@@ -10,7 +9,6 @@ const KEY = 'tackle:on'
 const OUTLINE_KEY = 'tackle:outlines'
 const esc = (s: string) => s.replace(/[&<>"']/g, c => `&#${c.charCodeAt(0)};`)
 const clamp = (v: number) => Math.min(1, Math.max(0, v || 0))
-// Hash routers keep one pathname for every route, so the hash is part of the route.
 const route = () => location.pathname + location.hash
 
 function ago(iso: string) {
@@ -52,7 +50,6 @@ function init() {
   let openId: string | null = null
   let hovered: string | null = null
   const anchored = new Map<string, Element>()
-  // Outlines are opt-in (corner button); the choice is a per-browser convenience.
   let outlines = false
   try {
     outlines = localStorage.getItem(OUTLINE_KEY) === '1'
@@ -105,7 +102,7 @@ function init() {
       await navigator.clipboard.writeText(id)
     }
     catch {
-      return prompt('Copy this comment ID', id) // clipboard API needs a secure origin (e.g. not a LAN IP)
+      return prompt('Copy this comment ID', id)
     }
     el.dataset.label ??= el.innerHTML
     el.innerHTML = `${icon('check')}Copied`
@@ -152,12 +149,10 @@ function init() {
           pin.style.left = `${x}px`
           pin.style.top = `${y}px`
           layer.append(pin)
-          // scrollWidth/Height = the expanded card's size, even while collapsed.
           pin.classList.toggle('flip-x', x + pin.scrollWidth > innerWidth - 8)
           pin.classList.toggle('flip-y', y - pin.scrollHeight < 8)
         }
         else {
-          // Never drop a comment whose element drifted away: keep it reachable from the hint bar.
           const orphan = document.createElement('button')
           orphan.className = 'orphan'
           orphan.dataset.id = c.id
@@ -179,7 +174,6 @@ function init() {
     if (panel.hidden || !at)
       return
     const b = at.getBoundingClientRect()
-    // Measure a bubble at its collapsed 40px size: it may still be easing shut from a hover.
     const r = at.classList.contains('pin') ? { left: b.left, right: b.left + 40, top: b.bottom - 40 } : b
     const w = panel.offsetWidth
     const right = r.right + 12 + w < innerWidth
@@ -255,7 +249,7 @@ ${composer('Reply')}`
     layer.hidden = hint.hidden = tool.hidden = !on
     if (on) {
       document.head.append(cursor)
-      layer.classList.add('enter') // bubbles rise in once per toggle, not on every re-render
+      layer.classList.add('enter')
       load().then(() => setTimeout(() => layer.classList.remove('enter'), 400))
     }
     else {
@@ -335,7 +329,6 @@ ${composer('Reply')}`
     }
   }
 
-  // Keep the host app's keyboard shortcuts from firing while typing in our panel.
   host.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape')
       e.stopPropagation()
@@ -362,7 +355,6 @@ ${composer('Reply')}`
     }
   })
 
-  // Comment mode: capture-phase listeners so the app's own handlers never see these clicks.
   const ours = (e: Event) => e.composedPath().includes(host)
   addEventListener('mousemove', (e) => {
     if (!on || draft)
@@ -408,7 +400,6 @@ ${composer('Reply')}`
   }
   addEventListener('scroll', schedule, { capture: true, passive: true })
   addEventListener('resize', schedule)
-  // Re-anchor when the app re-renders (SPA routes, toggles, modals). Our shadow DOM isn't observed.
   new MutationObserver(schedule).observe(document.body, { childList: true, subtree: true, characterData: true, attributes: true })
 
   const onRoute = () => {
