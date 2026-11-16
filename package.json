@@ -42,7 +42,7 @@
     "test": "node --test \"test/*.test.ts\"",
     "typecheck": "tsc",
     "demo": "pnpm build && vite demo",
-    "prepublishOnly": "pnpm typecheck && pnpm test && pnpm build"
+    "prepublishOnly": "pnpm build && pnpm typecheck && pnpm test"
   },
   "peerDependencies": {
     "vite": ">=5"
