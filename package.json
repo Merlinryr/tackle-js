@@ -4,6 +4,7 @@
   "description": "Pin comment bubbles on any element of a web app, stored in your repo for an AI agent to fix in priority order.",
   "type": "module",
   "license": "MIT",
+  "packageManager": "pnpm@12.14.0",
   "exports": {
     "./server": {
       "types": "./dist/server.d.ts",
