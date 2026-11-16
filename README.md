@@ -1,6 +1,6 @@
 # @magomerlino/tackle
 
-Pin comment bubbles on any element of your web app. Each comment is a JSON file in your repo, and an AI agent works through them by priority.
+Figma-style comment bubbles for your running web app. Click any element to pin a comment to it, and the comment is saved as a JSON file in your repo. Your AI agent reads those files and fixes them in priority order.
 
 ## Install
 
