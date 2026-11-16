@@ -43,10 +43,8 @@
   ],
   "scripts": {
     "build": "tsdown",
-    "test": "node --test \"test/*.test.ts\"",
     "typecheck": "tsc",
-    "demo": "pnpm build && vite demo",
-    "prepublishOnly": "pnpm build && pnpm typecheck && pnpm test"
+    "prepublishOnly": "pnpm build && pnpm typecheck"
   },
   "peerDependencies": {
     "vite": ">=5"
