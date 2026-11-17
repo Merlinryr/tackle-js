@@ -1,5 +1,9 @@
 # @magomerlino/tackle
 
+<p align="center">
+  <img src="banner.jpg" alt="tackle banner" width="100%">
+</p>
+
 Figma-style comment bubbles for your running web app. Click any element to pin a comment to it, and the comment is saved as a JSON file in your repo. Your AI agent reads those files and fixes them in priority order.
 
 ## Install
