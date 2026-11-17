@@ -1,10 +1,6 @@
 # @magomerlino/tackle
 
 <p align="center">
-  <img src="logo.jpg" alt="tackle logo" width="96">
-</p>
-
-<p align="center">
   <img src="banner.jpg" alt="tackle banner" width="100%">
 </p>
 
